@@ -1,19 +1,19 @@
 # Use a base image with Ubuntu
 FROM ubuntu:latest
 
-# Install sudo
+# Install OpenSSH server
 RUN apt-get update && \
-    apt-get install -y sudo && \
+    apt-get install -y openssh-server && \
     rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user with sudo privileges
-RUN useradd -m user && echo "user:user" | chpasswd && adduser user sudo
+# Generate SSH keys and set permissions
+RUN mkdir /var/run/sshd && \
+    echo 'root:root' | chpasswd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-# Set the default user to the non-root user
-USER user
+# Expose SSH port
+EXPOSE 22
 
-# Set the working directory to the user's home directory
-WORKDIR /home/user
-
-# Set the entry point or default command to run when the container starts
-CMD ["bash"]
+# Start SSH service
+CMD ["/usr/sbin/sshd", "-D"]
